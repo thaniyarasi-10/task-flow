@@ -168,10 +168,6 @@ export const TaskCard = ({ task, onUpdate, onDelete, onEdit, onShare }: TaskCard
                     Share Task
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem className="flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/50">
-                  <Calendar className="h-4 w-4" />
-                  Change Due Date
-                </DropdownMenuItem>
                 <DropdownMenuItem 
                   className="flex items-center gap-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/50"
                   onClick={() => onDelete(task.id)}

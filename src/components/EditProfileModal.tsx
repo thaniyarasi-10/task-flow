@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,11 +13,18 @@ interface EditProfileModalProps {
 }
 
 export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => {
-  const { profile, updateProfile, uploadAvatar } = useProfile();
+  const { profile, updateProfile, uploadAvatar, refetch } = useProfile();
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Update local state when profile changes
+  React.useEffect(() => {
+    if (profile?.full_name) {
+      setFullName(profile.full_name);
+    }
+  }, [profile]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -27,6 +33,7 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
     setUploading(true);
     try {
       await uploadAvatar(file);
+      await refetch(); // Refresh profile data
     } catch (error) {
       console.error('Error uploading file:', error);
     } finally {
@@ -38,6 +45,7 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
     setSaving(true);
     try {
       await updateProfile({ full_name: fullName });
+      await refetch(); // Refresh profile data
       onClose();
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -71,7 +79,7 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
             <Avatar className="h-24 w-24">
               <AvatarImage src={profile?.avatar_url || ''} />
               <AvatarFallback className="bg-blue-600 text-white text-lg">
-                {profile?.full_name ? getInitials(profile.full_name) : 'U'}
+                {fullName ? getInitials(fullName) : 'U'}
               </AvatarFallback>
             </Avatar>
             

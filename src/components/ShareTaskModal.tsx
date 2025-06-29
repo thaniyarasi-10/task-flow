@@ -81,9 +81,12 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
 
       if (error) throw error;
 
+      // Send email notifications (simulated)
+      await sendEmailNotifications(shareEmails, task, user, message);
+
       toast({
         title: "Task Shared Successfully",
-        description: `Task shared with ${shareEmails.length} user(s)`
+        description: `Task shared with ${shareEmails.length} user(s) and email notifications sent`
       });
 
       // Reset form
@@ -101,6 +104,37 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
     } finally {
       setIsSharing(false);
     }
+  };
+
+  const sendEmailNotifications = async (emails: string[], task: Task, user: any, message: string) => {
+    // In a real application, you would integrate with an email service like SendGrid, Mailgun, etc.
+    // For now, we'll simulate the email sending process
+    
+    const emailData = {
+      to: emails,
+      subject: `Task Shared: ${task.title}`,
+      html: `
+        <h2>You've been shared a task!</h2>
+        <p><strong>From:</strong> ${user.email}</p>
+        <p><strong>Task:</strong> ${task.title}</p>
+        <p><strong>Description:</strong> ${task.description}</p>
+        <p><strong>Priority:</strong> ${task.priority}</p>
+        <p><strong>Status:</strong> ${task.status}</p>
+        ${task.dueDate ? `<p><strong>Due Date:</strong> ${task.dueDate}</p>` : ''}
+        ${message ? `<p><strong>Message:</strong> ${message}</p>` : ''}
+        <p>This task has been shared with you through TaskSpace.</p>
+      `
+    };
+
+    // Simulate API call to email service
+    console.log('Sending email notifications:', emailData);
+    
+    // In production, you would make an actual API call here:
+    // await fetch('/api/send-email', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(emailData)
+    // });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

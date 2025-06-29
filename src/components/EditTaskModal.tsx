@@ -5,7 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Edit, Save } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, Edit, Save } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 interface Task {
@@ -34,6 +38,8 @@ export const EditTaskModal = ({ isOpen, onClose, task, onSaveTask }: EditTaskMod
     dueDate: ''
   });
 
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -45,6 +51,12 @@ export const EditTaskModal = ({ isOpen, onClose, task, onSaveTask }: EditTaskMod
         priority: task.priority,
         dueDate: task.dueDate || ''
       });
+      
+      if (task.dueDate) {
+        setSelectedDate(new Date(task.dueDate));
+      } else {
+        setSelectedDate(undefined);
+      }
     }
   }, [task]);
 
@@ -58,7 +70,7 @@ export const EditTaskModal = ({ isOpen, onClose, task, onSaveTask }: EditTaskMod
     setTimeout(() => {
       onSaveTask({
         ...formData,
-        dueDate: formData.dueDate || undefined
+        dueDate: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined
       });
       
       setIsSubmitting(false);
@@ -67,6 +79,11 @@ export const EditTaskModal = ({ isOpen, onClose, task, onSaveTask }: EditTaskMod
 
   const handleChange = (field: keyof Omit<Task, 'id' | 'createdAt'>, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    setIsCalendarOpen(false);
   };
 
   return (
@@ -160,17 +177,33 @@ export const EditTaskModal = ({ isOpen, onClose, task, onSaveTask }: EditTaskMod
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="dueDate" className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
+            <Label className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4" />
               Due Date (Optional)
             </Label>
-            <Input
-              id="dueDate"
-              type="date"
-              value={formData.dueDate}
-              onChange={(e) => handleChange('dueDate', e.target.value)}
-              className="border-purple-200 focus:border-purple-400 dark:border-purple-700"
-            />
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal border-purple-200 focus:border-purple-400 dark:border-purple-700",
+                    !selectedDate && "text-muted-foreground"
+                  )}
+                  onClick={() => setIsCalendarOpen(true)}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleDateSelect}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="flex gap-3 pt-4">

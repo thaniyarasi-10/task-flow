@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
   const [user, setUser] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
@@ -28,7 +28,7 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
     if (isOpen) {
       getUser();
     }
-  });
+  }, [isOpen]);
 
   const getInitials = (name: string) => {
     return name
@@ -124,7 +124,7 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                 <Input
                   id="name"
                   type="text"
-                  value={profile?.full_name || user?.user_metadata?.name || user?.user_metadata?.full_name || ''}
+                  value={profile?.full_name || ''}
                   readOnly
                   className="bg-gray-50 dark:bg-gray-700"
                 />
