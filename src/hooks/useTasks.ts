@@ -34,7 +34,6 @@ export const useTasks = () => {
 
   const fetchTasks = useCallback(async (page = 1, taskFilters = filters) => {
     try {
-      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -131,6 +130,11 @@ export const useTasks = () => {
 
   const updateTask = async (taskId: string, updates: Partial<Task>) => {
     try {
+      // Optimistically update the UI first
+      setTasks(prev => prev.map(task => 
+        task.id === taskId ? { ...task, ...updates } : task
+      ));
+
       const { error } = await supabase
         .from('tasks')
         .update({
@@ -145,16 +149,14 @@ export const useTasks = () => {
 
       if (error) throw error;
 
-      setTasks(prev => prev.map(task => 
-        task.id === taskId ? { ...task, ...updates } : task
-      ));
-
       toast({
         title: "Success",
         description: "Task updated successfully"
       });
     } catch (error) {
       console.error('Error updating task:', error);
+      // Revert the optimistic update on error
+      fetchTasks(currentPage, filters);
       toast({
         title: "Error",
         description: "Failed to update task",

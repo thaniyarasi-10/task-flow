@@ -20,10 +20,11 @@ interface TaskCardProps {
   task: Task;
   onUpdate: (taskId: string, updates: Partial<Task>) => void;
   onDelete: (taskId: string) => void;
+  onEdit?: (task: Task) => void;
   onShare?: (task: Task) => void;
 }
 
-export const TaskCard = ({ task, onUpdate, onDelete, onShare }: TaskCardProps) => {
+export const TaskCard = ({ task, onUpdate, onDelete, onEdit, onShare }: TaskCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const getStatusIcon = () => {
@@ -149,10 +150,15 @@ export const TaskCard = ({ task, onUpdate, onDelete, onShare }: TaskCardProps) =
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-800 border-purple-200 dark:border-purple-700">
-                <DropdownMenuItem className="flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/50">
-                  <Edit className="h-4 w-4" />
-                  Edit Task
-                </DropdownMenuItem>
+                {onEdit && (
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/50"
+                    onClick={() => onEdit(task)}
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit Task
+                  </DropdownMenuItem>
+                )}
                 {onShare && (
                   <DropdownMenuItem 
                     className="flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/50"

@@ -7,6 +7,7 @@ import { Plus, Search, Filter, Calendar, CheckCircle, Clock, Star, User, LogOut 
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TaskCard } from "@/components/TaskCard";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
+import { EditTaskModal } from "@/components/EditTaskModal";
 import { ProfileModal } from "@/components/ProfileModal";
 import { CalendarModal } from "@/components/CalendarModal";
 import { AdvancedFiltersModal } from "@/components/AdvancedFiltersModal";
@@ -47,10 +48,12 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'todo' | 'in-progress' | 'completed'>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [selectedTaskForEdit, setSelectedTaskForEdit] = useState<Task | null>(null);
   const [selectedTaskForShare, setSelectedTaskForShare] = useState<Task | null>(null);
   const [advancedFilters, setAdvancedFilters] = useState({
     priority: 'all' as 'all' | 'low' | 'medium' | 'high',
@@ -93,6 +96,19 @@ const Dashboard = () => {
 
   const handleUpdateTask = (taskId: string, updates: Partial<Task>) => {
     updateTask(taskId, updates);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setSelectedTaskForEdit(task);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEditedTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
+    if (selectedTaskForEdit) {
+      updateTask(selectedTaskForEdit.id, taskData);
+      setIsEditModalOpen(false);
+      setSelectedTaskForEdit(null);
+    }
   };
 
   const handleDeleteTask = (taskId: string) => {
@@ -304,23 +320,13 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  {/* Sorting and Advanced Filters */}
+                  {/* Sorting Controls */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <TaskSortingControls
                       sortBy={filters.sortBy || 'created_at'}
                       sortOrder={filters.sortOrder || 'desc'}
                       onSortChange={handleSortChange}
                     />
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsAdvancedFiltersOpen(true)}
-                      className="border-gray-300 dark:border-gray-600"
-                    >
-                      <Filter className="h-4 w-4 mr-2" />
-                      Advanced Filters
-                    </Button>
                   </div>
                 </div>
               </CardHeader>
@@ -367,6 +373,7 @@ const Dashboard = () => {
                             task={task}
                             onUpdate={handleUpdateTask}
                             onDelete={handleDeleteTask}
+                            onEdit={handleEditTask}
                             onShare={handleShareTask}
                           />
                         </motion.div>
@@ -453,6 +460,16 @@ const Dashboard = () => {
         onCreateTask={handleCreateTask}
       />
 
+      <EditTaskModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedTaskForEdit(null);
+        }}
+        task={selectedTaskForEdit}
+        onSaveTask={handleSaveEditedTask}
+      />
+
       <ProfileModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
@@ -476,7 +493,10 @@ const Dashboard = () => {
 
       <ShareTaskModal
         isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
+        onClose={() => {
+          setIsShareModalOpen(false);
+          setSelectedTaskForShare(null);
+        }}
         task={selectedTaskForShare}
       />
     </div>

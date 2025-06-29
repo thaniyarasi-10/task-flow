@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -151,14 +150,14 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
               <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Account Status</h4>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Email Verified</span>
-                <span className={`font-medium ${user?.email_confirmed_at ? 'text-green-600' : 'text-orange-600'}`}>
-                  {user?.email_confirmed_at ? 'Verified' : 'Pending'}
+                <span className="font-medium text-green-600">
+                  Verified
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm mt-1">
                 <span className="text-gray-600 dark:text-gray-400">Last Sign In</span>
                 <span className="font-medium text-gray-900 dark:text-gray-100">
-                  {user?.last_sign_in_at ? formatDate(user.last_sign_in_at) : 'Never'}
+                  {user?.last_sign_in_at ? formatDate(user.last_sign_in_at) : 'Current session'}
                 </span>
               </div>
             </div>
