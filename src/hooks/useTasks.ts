@@ -88,6 +88,7 @@ export const useTasks = () => {
       // Handle authentication errors by signing out
       if (error?.status === 401 || error?.status === 403) {
         await supabase.auth.signOut();
+        window.location.href = '/auth';
         return;
       }
       
@@ -131,6 +132,7 @@ export const useTasks = () => {
       // Handle authentication errors by signing out
       if (error?.status === 401 || error?.status === 403) {
         await supabase.auth.signOut();
+        window.location.href = '/auth';
         return;
       }
       
@@ -173,6 +175,7 @@ export const useTasks = () => {
       // Handle authentication errors by signing out
       if (error?.status === 401 || error?.status === 403) {
         await supabase.auth.signOut();
+        window.location.href = '/auth';
         return;
       }
       
@@ -208,6 +211,7 @@ export const useTasks = () => {
       // Handle authentication errors by signing out
       if (error?.status === 401 || error?.status === 403) {
         await supabase.auth.signOut();
+        window.location.href = '/auth';
         return;
       }
       
