@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +20,14 @@ const Auth = () => {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Get the current site URL for redirects
+  const getSiteUrl = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.origin;
+    }
+    return 'https://taskspacetodo.netlify.app';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,22 +54,32 @@ const Auth = () => {
           options: {
             data: {
               name: formData.name,
+              full_name: formData.name,
             },
-            emailRedirectTo: `${window.location.origin}/dashboard`
+            emailRedirectTo: `${getSiteUrl()}/dashboard`
           }
         });
         
         if (error) throw error;
         
-        toast({
-          title: "Account created!",
-          description: "Please check your email to verify your account.",
-        });
+        if (data.user && !data.user.email_confirmed_at) {
+          toast({
+            title: "Check your email!",
+            description: "We've sent you a verification link. Please check your email and click the link to verify your account.",
+          });
+        } else {
+          toast({
+            title: "Account created!",
+            description: "Your account has been created successfully.",
+          });
+          navigate('/dashboard');
+        }
       }
     } catch (error: any) {
+      console.error('Auth error:', error);
       toast({
         title: "Authentication Error",
-        description: error.message,
+        description: error.message || "An error occurred during authentication",
         variant: "destructive"
       });
     } finally {
