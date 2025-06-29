@@ -49,8 +49,14 @@ export const useProfile = () => {
       } else {
         setProfile(data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching profile:', error);
+      
+      // Handle authentication errors by signing out
+      if (error?.status === 401 || error?.status === 403) {
+        await supabase.auth.signOut();
+        return;
+      }
     } finally {
       setLoading(false);
     }
@@ -77,8 +83,15 @@ export const useProfile = () => {
         title: "Success",
         description: "Profile updated successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
+      
+      // Handle authentication errors by signing out
+      if (error?.status === 401 || error?.status === 403) {
+        await supabase.auth.signOut();
+        return;
+      }
+      
       toast({
         title: "Error",
         description: "Failed to update profile",
@@ -108,8 +121,15 @@ export const useProfile = () => {
       await updateProfile({ avatar_url: data.publicUrl });
 
       return data.publicUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading avatar:', error);
+      
+      // Handle authentication errors by signing out
+      if (error?.status === 401 || error?.status === 403) {
+        await supabase.auth.signOut();
+        return;
+      }
+      
       toast({
         title: "Error",
         description: "Failed to upload avatar",

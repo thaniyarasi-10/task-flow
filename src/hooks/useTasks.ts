@@ -82,8 +82,15 @@ export const useTasks = () => {
       setTasks(formattedTasks);
       setTotalPages(Math.ceil((count || 0) / ITEMS_PER_PAGE));
       setCurrentPage(page);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching tasks:', error);
+      
+      // Handle authentication errors by signing out
+      if (error?.status === 401 || error?.status === 403) {
+        await supabase.auth.signOut();
+        return;
+      }
+      
       toast({
         title: "Error",
         description: "Failed to load tasks",
@@ -118,8 +125,15 @@ export const useTasks = () => {
 
       // Refresh tasks to maintain pagination
       fetchTasks(currentPage, filters);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating task:', error);
+      
+      // Handle authentication errors by signing out
+      if (error?.status === 401 || error?.status === 403) {
+        await supabase.auth.signOut();
+        return;
+      }
+      
       toast({
         title: "Error",
         description: "Failed to create task",
@@ -153,8 +167,15 @@ export const useTasks = () => {
         title: "Success",
         description: "Task updated successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating task:', error);
+      
+      // Handle authentication errors by signing out
+      if (error?.status === 401 || error?.status === 403) {
+        await supabase.auth.signOut();
+        return;
+      }
+      
       // Revert the optimistic update on error
       fetchTasks(currentPage, filters);
       toast({
@@ -181,8 +202,15 @@ export const useTasks = () => {
 
       // Refresh tasks to maintain pagination
       fetchTasks(currentPage, filters);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting task:', error);
+      
+      // Handle authentication errors by signing out
+      if (error?.status === 401 || error?.status === 403) {
+        await supabase.auth.signOut();
+        return;
+      }
+      
       toast({
         title: "Error",
         description: "Failed to delete task",
