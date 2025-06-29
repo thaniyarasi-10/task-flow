@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +13,7 @@ import { AdvancedFiltersModal } from "@/components/AdvancedFiltersModal";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useTasks } from "@/hooks/useTasks";
 
 interface Task {
   id: string;
@@ -27,7 +27,7 @@ interface Task {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const { tasks, loading, createTask, updateTask, deleteTask } = useTasks();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'todo' | 'in-progress' | 'completed'>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -39,6 +39,14 @@ const Dashboard = () => {
     dateRange: null as { from: Date; to: Date } | null,
     progress: 'all' as 'all' | 'todo' | 'in-progress' | 'completed'
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -61,23 +69,16 @@ const Dashboard = () => {
   const inProgressTasks = tasks.filter(task => task.status === 'in-progress').length;
 
   const handleCreateTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
-    const newTask: Task = {
-      ...taskData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString()
-    };
-    setTasks(prev => [newTask, ...prev]);
+    createTask(taskData);
     setIsCreateModalOpen(false);
   };
 
   const handleUpdateTask = (taskId: string, updates: Partial<Task>) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId ? { ...task, ...updates } : task
-    ));
+    updateTask(taskId, updates);
   };
 
   const handleDeleteTask = (taskId: string) => {
-    setTasks(prev => prev.filter(task => task.id !== taskId));
+    deleteTask(taskId);
   };
 
   const handleLogout = async () => {
