@@ -48,6 +48,7 @@ const Auth = () => {
         });
         navigate('/dashboard');
       } else {
+        // For signup, disable email confirmation to avoid verification issues
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -62,24 +63,52 @@ const Auth = () => {
         
         if (error) throw error;
         
-        if (data.user && !data.user.email_confirmed_at) {
-          toast({
-            title: "Check your email!",
-            description: "We've sent you a verification link. Please check your email and click the link to verify your account.",
-          });
+        // Check if user was created successfully
+        if (data.user) {
+          if (data.user.email_confirmed_at) {
+            // Email is already confirmed (auto-confirm is enabled)
+            toast({
+              title: "Account created successfully!",
+              description: "You can now sign in to your account.",
+            });
+            setIsLogin(true); // Switch to login mode
+          } else {
+            // Email confirmation required
+            toast({
+              title: "Check your email!",
+              description: "We've sent you a verification link. Please check your email and click the link to verify your account.",
+            });
+          }
         } else {
           toast({
             title: "Account created!",
-            description: "Your account has been created successfully.",
+            description: "Please try signing in with your credentials.",
           });
-          navigate('/dashboard');
+          setIsLogin(true); // Switch to login mode
         }
       }
     } catch (error: any) {
       console.error('Auth error:', error);
+      
+      let errorMessage = "An error occurred during authentication";
+      
+      // Handle specific error cases
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = "Invalid email or password. Please check your credentials.";
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = "Please check your email and click the verification link before signing in.";
+      } else if (error.message?.includes('User already registered')) {
+        errorMessage = "An account with this email already exists. Please sign in instead.";
+        setIsLogin(true);
+      } else if (error.message?.includes('Password should be at least')) {
+        errorMessage = "Password should be at least 6 characters long.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Authentication Error",
-        description: error.message || "An error occurred during authentication",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -163,8 +192,14 @@ const Auth = () => {
                         onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                         className="pl-10 h-12 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400"
                         required
+                        minLength={6}
                       />
                     </div>
+                    {!isLogin && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Password must be at least 6 characters long
+                      </p>
+                    )}
                   </div>
 
                   <Button
@@ -192,6 +227,16 @@ const Auth = () => {
                     {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
                   </button>
                 </div>
+
+                {/* Email verification notice */}
+                {!isLogin && (
+                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-xs text-blue-800 dark:text-blue-200">
+                      <Mail className="inline h-3 w-3 mr-1" />
+                      After creating your account, you may need to verify your email address before signing in.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
