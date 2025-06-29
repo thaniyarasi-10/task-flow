@@ -86,14 +86,6 @@ const Index = () => {
                 Start for free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="px-8 py-4 text-lg h-14 border-gray-300 dark:border-gray-600"
-              >
-                Watch demo
-              </Button>
             </div>
 
             {/* Dashboard Preview */}
@@ -104,19 +96,59 @@ const Index = () => {
               className="relative max-w-5xl mx-auto"
             >
               <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-700 rounded-2xl shadow-2xl p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-8 h-96 flex items-center justify-center border border-gray-200 dark:border-gray-700">
-                  <div className="text-center">
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                      <div className="h-16 bg-gray-100 dark:bg-gray-700 rounded-lg"></div>
-                      <div className="h-16 bg-blue-100 dark:bg-blue-900/50 rounded-lg"></div>
-                      <div className="h-16 bg-gray-100 dark:bg-gray-700 rounded-lg"></div>
+                <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                  {/* Dashboard Header Preview */}
+                  <div className="bg-blue-600 text-white p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="h-6 w-6 bg-white/20 rounded flex items-center justify-center">
+                          <CheckCircle className="h-4 w-4" />
+                        </div>
+                        <span className="font-semibold">TaskSpace</span>
+                      </div>
+                      <div className="text-sm opacity-80">Dashboard</div>
                     </div>
-                    <p className="text-xl font-medium text-gray-600 dark:text-gray-400">
-                      Dashboard Preview
-                    </p>
-                    <p className="text-gray-500 dark:text-gray-500 mt-2">
-                      Your workspace will appear here
-                    </p>
+                  </div>
+                  
+                  {/* Stats Cards Preview */}
+                  <div className="p-6">
+                    <div className="grid grid-cols-4 gap-4 mb-6">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                        <div className="text-blue-600 text-2xl font-bold">12</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Total Tasks</div>
+                      </div>
+                      <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+                        <div className="text-orange-600 text-2xl font-bold">3</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">In Progress</div>
+                      </div>
+                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                        <div className="text-green-600 text-2xl font-bold">8</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Completed</div>
+                      </div>
+                      <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                        <div className="text-purple-600 text-2xl font-bold">67%</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Completion</div>
+                      </div>
+                    </div>
+                    
+                    {/* Task List Preview */}
+                    <div className="space-y-3">
+                      <div className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="h-3 w-3 bg-blue-500 rounded-full mr-3"></div>
+                        <div className="text-sm font-medium">Design new landing page</div>
+                        <div className="ml-auto text-xs text-gray-500">High Priority</div>
+                      </div>
+                      <div className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="h-3 w-3 bg-green-500 rounded-full mr-3"></div>
+                        <div className="text-sm font-medium">Review marketing strategy</div>
+                        <div className="ml-auto text-xs text-gray-500">Completed</div>
+                      </div>
+                      <div className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="h-3 w-3 bg-orange-500 rounded-full mr-3"></div>
+                        <div className="text-sm font-medium">Team meeting preparation</div>
+                        <div className="ml-auto text-xs text-gray-500">Medium Priority</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

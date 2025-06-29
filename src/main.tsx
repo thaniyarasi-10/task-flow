@@ -1,5 +1,20 @@
+
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-createRoot(document.getElementById("root")!).render(<App />);
+// Hide Lovable badge
+const style = document.createElement('style');
+style.textContent = `
+  .lovable-attribution {
+    display: none !important;
+  }
+`;
+document.head.appendChild(style);
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)

@@ -1,0 +1,159 @@
+
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User, Mail, Calendar, Settings } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface ProfileModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+
+    if (isOpen) {
+      getUser();
+    }
+  }, [isOpen]);
+
+  const getInitials = (email: string) => {
+    return email.substring(0, 2).toUpperCase();
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <User className="h-5 w-5" />
+            <span>Profile</span>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Avatar Section */}
+          <div className="flex items-center space-x-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={user?.user_metadata?.avatar_url} />
+              <AvatarFallback className="bg-blue-600 text-white text-lg">
+                {user?.email ? getInitials(user.email) : 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {user?.user_metadata?.name || user?.user_metadata?.full_name || 'User'}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Member since {user?.created_at ? formatDate(user.created_at) : 'Unknown'}
+              </p>
+            </div>
+          </div>
+
+          {/* User Information */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium flex items-center space-x-2">
+                <Mail className="h-4 w-4" />
+                <span>Email Address</span>
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={user?.email || ''}
+                readOnly
+                className="bg-gray-50 dark:bg-gray-700"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium flex items-center space-x-2">
+                <User className="h-4 w-4" />
+                <span>Full Name</span>
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                value={user?.user_metadata?.name || user?.user_metadata?.full_name || ''}
+                readOnly
+                className="bg-gray-50 dark:bg-gray-700"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="created" className="text-sm font-medium flex items-center space-x-2">
+                <Calendar className="h-4 w-4" />
+                <span>Account Created</span>
+              </Label>
+              <Input
+                id="created"
+                type="text"
+                value={user?.created_at ? formatDate(user.created_at) : 'Unknown'}
+                readOnly
+                className="bg-gray-50 dark:bg-gray-700"
+              />
+            </div>
+          </div>
+
+          {/* Account Stats */}
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Account Status</h4>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600 dark:text-gray-400">Email Verified</span>
+              <span className={`font-medium ${user?.email_confirmed_at ? 'text-green-600' : 'text-orange-600'}`}>
+                {user?.email_confirmed_at ? 'Verified' : 'Pending'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm mt-1">
+              <span className="text-gray-600 dark:text-gray-400">Last Sign In</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">
+                {user?.last_sign_in_at ? formatDate(user.last_sign_in_at) : 'Never'}
+              </span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end space-x-3">
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
