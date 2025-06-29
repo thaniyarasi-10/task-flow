@@ -6,6 +6,12 @@ interface Profile {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
+  bio: string | null;
+  phone: string | null;
+  location: string | null;
+  job_title: string | null;
+  company: string | null;
+  website: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +40,12 @@ export const useProfile = () => {
           id: user.id,
           full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
           avatar_url: null,
+          bio: null,
+          phone: null,
+          location: null,
+          job_title: null,
+          company: null,
+          website: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
@@ -62,7 +74,7 @@ export const useProfile = () => {
     }
   };
 
-  const updateProfile = async (updates: { full_name?: string; avatar_url?: string }) => {
+  const updateProfile = async (updates: Partial<Profile>) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
