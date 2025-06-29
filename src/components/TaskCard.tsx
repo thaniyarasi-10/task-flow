@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, Circle, Calendar, Trash2, Edit, MoreHorizontal } from "lucide-react";
+import { CheckCircle, Clock, Circle, Calendar, Trash2, Edit, MoreHorizontal, Share2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
 
@@ -21,9 +20,10 @@ interface TaskCardProps {
   task: Task;
   onUpdate: (taskId: string, updates: Partial<Task>) => void;
   onDelete: (taskId: string) => void;
+  onShare?: (task: Task) => void;
 }
 
-export const TaskCard = ({ task, onUpdate, onDelete }: TaskCardProps) => {
+export const TaskCard = ({ task, onUpdate, onDelete, onShare }: TaskCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const getStatusIcon = () => {
@@ -153,6 +153,15 @@ export const TaskCard = ({ task, onUpdate, onDelete }: TaskCardProps) => {
                   <Edit className="h-4 w-4" />
                   Edit Task
                 </DropdownMenuItem>
+                {onShare && (
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/50"
+                    onClick={() => onShare(task)}
+                  >
+                    <Share2 className="h-4 w-4" />
+                    Share Task
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem className="flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/50">
                   <Calendar className="h-4 w-4" />
                   Change Due Date

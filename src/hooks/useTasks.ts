@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -13,17 +12,61 @@ interface Task {
   createdAt: string;
 }
 
+interface TaskFilters {
+  search?: string;
+  status?: 'all' | 'todo' | 'in-progress' | 'completed';
+  priority?: 'all' | 'low' | 'medium' | 'high';
+  sortBy?: 'created_at' | 'title' | 'due_date' | 'priority';
+  sortOrder?: 'asc' | 'desc';
+}
+
 export const useTasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [filters, setFilters] = useState<TaskFilters>({
+    sortBy: 'created_at',
+    sortOrder: 'desc'
+  });
   const { toast } = useToast();
+  const ITEMS_PER_PAGE = 10;
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async (page = 1, taskFilters = filters) => {
     try {
-      const { data, error } = await supabase
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      let query = supabase
         .from('tasks')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .eq('user_id', user.id);
+
+      // Apply filters
+      if (taskFilters.status && taskFilters.status !== 'all') {
+        query = query.eq('status', taskFilters.status);
+      }
+
+      if (taskFilters.priority && taskFilters.priority !== 'all') {
+        query = query.eq('priority', taskFilters.priority);
+      }
+
+      if (taskFilters.search) {
+        query = query.or(`title.ilike.%${taskFilters.search}%,description.ilike.%${taskFilters.search}%`);
+      }
+
+      // Apply sorting
+      const sortColumn = taskFilters.sortBy || 'created_at';
+      const ascending = taskFilters.sortOrder === 'asc';
+      query = query.order(sortColumn, { ascending });
+
+      // Apply pagination
+      const from = (page - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
 
       if (error) throw error;
 
@@ -38,6 +81,8 @@ export const useTasks = () => {
       }));
 
       setTasks(formattedTasks);
+      setTotalPages(Math.ceil((count || 0) / ITEMS_PER_PAGE));
+      setCurrentPage(page);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       toast({
@@ -48,7 +93,7 @@ export const useTasks = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, toast]);
 
   const createTask = async (taskData: Omit<Task, 'id' | 'createdAt'>) => {
     try {
@@ -67,22 +112,13 @@ export const useTasks = () => {
 
       if (error) throw error;
 
-      const newTask: Task = {
-        id: data.id,
-        title: data.title,
-        description: data.description || '',
-        status: data.status,
-        priority: data.priority,
-        dueDate: data.due_date || undefined,
-        createdAt: data.created_at
-      };
-
-      setTasks(prev => [newTask, ...prev]);
-      
       toast({
         title: "Success",
         description: "Task created successfully"
       });
+
+      // Refresh tasks to maintain pagination
+      fetchTasks(currentPage, filters);
     } catch (error) {
       console.error('Error creating task:', error);
       toast({
@@ -136,12 +172,13 @@ export const useTasks = () => {
 
       if (error) throw error;
 
-      setTasks(prev => prev.filter(task => task.id !== taskId));
-
       toast({
         title: "Success",
         description: "Task deleted successfully"
       });
+
+      // Refresh tasks to maintain pagination
+      fetchTasks(currentPage, filters);
     } catch (error) {
       console.error('Error deleting task:', error);
       toast({
@@ -152,16 +189,54 @@ export const useTasks = () => {
     }
   };
 
+  const applyFilters = (newFilters: TaskFilters) => {
+    setFilters(newFilters);
+    fetchTasks(1, newFilters);
+  };
+
+  const goToPage = (page: number) => {
+    fetchTasks(page, filters);
+  };
+
+  // Set up real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('tasks_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks'
+        },
+        (payload) => {
+          console.log('Real-time update:', payload);
+          // Refresh tasks when changes occur
+          fetchTasks(currentPage, filters);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentPage, filters, fetchTasks]);
+
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [fetchTasks]);
 
   return {
     tasks,
     loading,
+    currentPage,
+    totalPages,
+    filters,
     createTask,
     updateTask,
     deleteTask,
-    refetch: fetchTasks
+    applyFilters,
+    goToPage,
+    refetch: () => fetchTasks(currentPage, filters)
   };
 };
