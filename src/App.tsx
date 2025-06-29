@@ -23,24 +23,27 @@ const App = () => {
   useEffect(() => {
     // Handle URL hash for email confirmation
     const handleEmailConfirmation = async () => {
-      const hash = window.location.hash;
-      if (hash && hash.includes('access_token')) {
-        try {
-          const { data, error } = await supabase.auth.getSession();
-          if (error) throw error;
-          
-          if (data.session) {
-            setSession(data.session);
-            setUser(data.session.user);
-            // Clear the hash and redirect to dashboard
-            window.history.replaceState(null, '', window.location.pathname);
-            window.location.href = '/dashboard';
-          }
-        } catch (error) {
-          console.error('Error handling email confirmation:', error);
-        }
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    try {
+      const { data, error } = await supabase.auth.getSessionFromUrl(); // ✅ Correct API
+
+      if (error) throw error;
+
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+
+        // Clear hash and redirect
+        window.history.replaceState(null, '', window.location.pathname);
+        window.location.href = '/dashboard';
       }
-    };
+    } catch (error) {
+      console.error('Error handling email confirmation:', error);
+    }
+  }
+};
+
 
     handleEmailConfirmation();
 
@@ -67,7 +70,7 @@ const App = () => {
     // Check for existing session
     const initializeAuth = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSessionFromUrl();
         
         if (error) {
           console.error('Error getting session:', error);
