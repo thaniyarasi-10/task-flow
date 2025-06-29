@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Mail, Lock, User, CheckCircle2 } from "lucide-react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Mail, Lock, User, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -20,6 +21,52 @@ const Auth = () => {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+
+  // Handle email confirmation from URL
+  useEffect(() => {
+    const handleEmailConfirmation = async () => {
+      const token = searchParams.get('token');
+      const type = searchParams.get('type');
+      const email = searchParams.get('email');
+
+      if (token && type === 'signup') {
+        setIsVerifying(true);
+        try {
+          // Verify the email confirmation token
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: 'signup'
+          });
+
+          if (error) throw error;
+
+          toast({
+            title: "Email Verified! 🎉",
+            description: "Your account has been confirmed. You can now sign in.",
+          });
+
+          // Clear URL parameters and switch to login
+          window.history.replaceState({}, '', '/auth');
+          setIsLogin(true);
+          if (email) {
+            setFormData(prev => ({ ...prev, email }));
+          }
+        } catch (error: any) {
+          console.error('Email verification error:', error);
+          toast({
+            title: "Verification Failed",
+            description: "The verification link may be expired or invalid. Please try signing up again.",
+            variant: "destructive"
+          });
+        } finally {
+          setIsVerifying(false);
+        }
+      }
+    };
+
+    handleEmailConfirmation();
+  }, [searchParams, toast]);
 
   // Get the current site URL for redirects
   const getSiteUrl = () => {
@@ -31,6 +78,9 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.email.trim() || !formData.password.trim()) return;
+    if (!isLogin && !formData.name.trim()) return;
+
     setIsLoading(true);
     
     try {
@@ -43,12 +93,12 @@ const Auth = () => {
         if (error) throw error;
         
         toast({
-          title: "Welcome back!",
+          title: "Welcome back! 🎉",
           description: "You've been signed in successfully.",
         });
         navigate('/dashboard');
       } else {
-        // For signup, disable email confirmation to avoid verification issues
+        // For signup, enable email confirmation
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -57,7 +107,7 @@ const Auth = () => {
               name: formData.name,
               full_name: formData.name,
             },
-            emailRedirectTo: `${getSiteUrl()}/dashboard`
+            emailRedirectTo: `${getSiteUrl()}/auth`
           }
         });
         
@@ -68,20 +118,23 @@ const Auth = () => {
           if (data.user.email_confirmed_at) {
             // Email is already confirmed (auto-confirm is enabled)
             toast({
-              title: "Account created successfully!",
+              title: "Account created successfully! 🎉",
               description: "You can now sign in to your account.",
             });
             setIsLogin(true); // Switch to login mode
           } else {
             // Email confirmation required
             toast({
-              title: "Check your email!",
-              description: "We've sent you a verification link. Please check your email and click the link to verify your account.",
+              title: "Check your email! 📧",
+              description: "We've sent you a verification link. Please check your email (including spam folder) and click the link to verify your account.",
             });
+            
+            // Show email verification notice
+            setIsLogin(true); // Switch to login mode for when they return
           }
         } else {
           toast({
-            title: "Account created!",
+            title: "Account created! ✅",
             description: "Please try signing in with your credentials.",
           });
           setIsLogin(true); // Switch to login mode
@@ -102,6 +155,10 @@ const Auth = () => {
         setIsLogin(true);
       } else if (error.message?.includes('Password should be at least')) {
         errorMessage = "Password should be at least 6 characters long.";
+      } else if (error.message?.includes('Signup is disabled')) {
+        errorMessage = "Account creation is temporarily disabled. Please contact support.";
+      } else if (error.message?.includes('Email rate limit exceeded')) {
+        errorMessage = "Too many email attempts. Please wait a few minutes before trying again.";
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -115,6 +172,25 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
+
+  // Show verification screen if verifying email
+  if (isVerifying) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-6">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              Verifying your email...
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Please wait while we confirm your account.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
@@ -209,7 +285,7 @@ const Auth = () => {
                   >
                     {isLoading ? (
                       <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         <span>{isLogin ? "Signing in..." : "Creating account..."}</span>
                       </div>
                     ) : (
@@ -230,10 +306,27 @@ const Auth = () => {
 
                 {/* Email verification notice */}
                 {!isLogin && (
-                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <p className="text-xs text-blue-800 dark:text-blue-200">
-                      <Mail className="inline h-3 w-3 mr-1" />
-                      After creating your account, you may need to verify your email address before signing in.
+                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="flex items-start space-x-3">
+                      <Mail className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                          Email Verification Required
+                        </p>
+                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                          After creating your account, you'll receive a verification email. Please check your inbox (and spam folder) and click the verification link to activate your account.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Email confirmation help */}
+                {isLogin && (
+                  <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
+                      <AlertCircle className="inline h-3 w-3 mr-1" />
+                      Having trouble signing in? Make sure you've verified your email address.
                     </p>
                   </div>
                 )}
