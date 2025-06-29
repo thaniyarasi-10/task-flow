@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Share2, Mail, User, X, Plus, CheckCircle, AlertCircle } from "lucide-react";
+import { Share2, Mail, User, X, Plus, CheckCircle, AlertCircle, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -31,6 +31,7 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
   const [message, setMessage] = useState('');
   const [isSharing, setIsSharing] = useState(false);
   const [shareStatus, setShareStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [shareResult, setShareResult] = useState<any>(null);
   const { toast } = useToast();
 
   const addEmail = () => {
@@ -59,12 +60,13 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
 
     setIsSharing(true);
     setShareStatus('idle');
+    setShareResult(null);
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
-      console.log('🚀 Starting task sharing process...');
+      console.log('🚀 Starting enhanced task sharing process...');
 
       // Step 1: Create shared task records in database
       const sharedTasks = shareEmails.map(email => ({
@@ -93,14 +95,16 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
 
       console.log('✅ Shared tasks saved to database');
 
-      // Step 2: Send email notifications
+      // Step 2: Send email notifications with enhanced error handling
       console.log('📧 Sending email notifications...');
-      await sendEmailNotifications(shareEmails, task, user, message);
+      const emailResult = await sendEmailNotifications(shareEmails, task, user, message);
 
+      setShareResult(emailResult);
       setShareStatus('success');
+      
       toast({
         title: "Task Shared Successfully! 🎉",
-        description: `Task shared with ${shareEmails.length} user(s) and email notifications sent`,
+        description: `Task shared with ${shareEmails.length} user(s). ${emailResult.message}`,
       });
 
       // Reset form after a short delay
@@ -109,12 +113,14 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
         setCurrentEmail('');
         setMessage('');
         setShareStatus('idle');
+        setShareResult(null);
         onClose();
-      }, 2000);
+      }, 3000);
 
     } catch (error: any) {
       console.error('❌ Error sharing task:', error);
       setShareStatus('error');
+      setShareResult({ error: error.message });
       toast({
         title: "Sharing Failed",
         description: error.message || "Failed to share task. Please try again.",
@@ -127,10 +133,11 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
 
   const sendEmailNotifications = async (emails: string[], task: Task, user: any, message: string) => {
     try {
-      console.log('📬 Calling email function with data:', {
+      console.log('📬 Calling enhanced email function with data:', {
         recipients: emails.length,
         taskTitle: task.title,
-        sender: user.email
+        sender: user.email,
+        hasMessage: !!message
       });
 
       const { data, error } = await supabase.functions.invoke('send-task-email', {
@@ -159,19 +166,15 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
       console.log('✅ Email function response:', data);
       
       if (data?.success) {
-        console.log('🎉 Emails sent successfully to', data.recipients, 'recipients');
+        console.log(`🎉 Emails processed: ${data.recipients} recipients via ${data.service}`);
+        return data;
       } else {
         throw new Error('Email function returned unsuccessful response');
       }
 
     } catch (error: any) {
       console.error('❌ Error in email notification:', error);
-      // Don't throw here - we want the sharing to succeed even if email fails
-      toast({
-        title: "Email Warning",
-        description: "Task shared successfully, but email notifications may have failed to send.",
-        variant: "default"
-      });
+      throw error; // Re-throw to handle in parent
     }
   };
 
@@ -187,6 +190,7 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
     setCurrentEmail('');
     setMessage('');
     setShareStatus('idle');
+    setShareResult(null);
     onClose();
   };
 
@@ -196,7 +200,7 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Share2 className="h-5 w-5" />
-            <span>Share Task</span>
+            <span>Share Task via Email</span>
             {shareStatus === 'success' && <CheckCircle className="h-5 w-5 text-green-500" />}
             {shareStatus === 'error' && <AlertCircle className="h-5 w-5 text-red-500" />}
           </DialogTitle>
@@ -207,25 +211,30 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
             {/* Task Preview */}
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                {task.title}
+                📋 {task.title}
               </h4>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {task.description || 'No description'}
               </p>
               <div className="flex items-center space-x-2 mt-2">
                 <Badge variant="outline" className="text-xs">
-                  {task.priority} priority
+                  🚨 {task.priority} priority
                 </Badge>
                 <Badge variant="outline" className="text-xs">
-                  {task.status.replace('-', ' ')}
+                  📊 {task.status.replace('-', ' ')}
                 </Badge>
+                {task.dueDate && (
+                  <Badge variant="outline" className="text-xs">
+                    📅 Due: {new Date(task.dueDate).toLocaleDateString()}
+                  </Badge>
+                )}
               </div>
             </div>
 
             {/* Email Input */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
-                Share with (Email addresses)
+                📧 Share with (Email addresses)
               </Label>
               <div className="flex space-x-2">
                 <Input
@@ -252,7 +261,7 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
             {/* Email List */}
             {shareEmails.length > 0 && (
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Recipients ({shareEmails.length}):</Label>
+                <Label className="text-sm font-medium">📬 Recipients ({shareEmails.length}):</Label>
                 <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                   {shareEmails.map((email) => (
                     <Badge
@@ -278,7 +287,7 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
             {/* Message */}
             <div className="space-y-2">
               <Label htmlFor="message" className="text-sm font-medium">
-                Personal Message (Optional)
+                💬 Personal Message (Optional)
               </Label>
               <Textarea
                 id="message"
@@ -295,25 +304,36 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
             </div>
 
             {/* Status Messages */}
-            {shareStatus === 'success' && (
+            {shareStatus === 'success' && shareResult && (
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 mb-2">
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium text-green-800 dark:text-green-200">
-                    Task shared successfully! Closing in a moment...
+                    Task shared successfully!
                   </span>
+                </div>
+                <div className="text-xs text-green-700 dark:text-green-300 space-y-1">
+                  <p>📧 Service: {shareResult.service}</p>
+                  <p>📬 Recipients: {shareResult.recipients}</p>
+                  <p>📋 Task: {shareResult.details?.taskTitle}</p>
+                  {shareResult.details?.messageId && (
+                    <p>🆔 Message ID: {shareResult.details.messageId}</p>
+                  )}
                 </div>
               </div>
             )}
 
-            {shareStatus === 'error' && (
+            {shareStatus === 'error' && shareResult && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 mb-2">
                   <AlertCircle className="h-4 w-4 text-red-600" />
                   <span className="text-sm font-medium text-red-800 dark:text-red-200">
-                    Failed to share task. Please try again.
+                    Failed to share task
                   </span>
                 </div>
+                <p className="text-xs text-red-700 dark:text-red-300">
+                  {shareResult.error || 'Unknown error occurred'}
+                </p>
               </div>
             )}
 
@@ -329,22 +349,22 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
               <Button
                 onClick={handleShare}
                 disabled={shareEmails.length === 0 || isSharing || shareStatus === 'success'}
-                className="min-w-[120px]"
+                className="min-w-[140px]"
               >
                 {isSharing ? (
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Sharing...</span>
+                    <span>Sending...</span>
                   </div>
                 ) : shareStatus === 'success' ? (
                   <div className="flex items-center space-x-2">
                     <CheckCircle className="h-4 w-4" />
-                    <span>Shared!</span>
+                    <span>Sent!</span>
                   </div>
                 ) : (
                   <>
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share Task
+                    <Send className="h-4 w-4 mr-2" />
+                    Share & Email
                   </>
                 )}
               </Button>

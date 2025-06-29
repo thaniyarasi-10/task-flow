@@ -11,11 +11,18 @@ A modern, collaborative task management application built with React, TypeScript
 - Set due dates with calendar integration
 - Rich task descriptions
 
+### 📧 Email Integration & Task Sharing
+- **Professional Email Sharing**: Share tasks via email with beautiful HTML templates
+- **Multiple Email Services**: Supports Resend, SMTP, and EmailJS
+- **Real-time Notifications**: Instant email notifications when tasks are shared
+- **Personal Messages**: Add custom messages when sharing tasks
+- **Email Templates**: Professional, responsive email designs
+
 ### 👥 Collaboration
-- **Gmail Email Integration**: Share tasks via professional Gmail emails
 - Real-time task sharing with team members
 - Personal messages with shared tasks
 - Beautiful HTML email templates
+- Task collaboration tracking
 
 ### 📊 Dashboard & Analytics
 - Comprehensive task overview
@@ -42,64 +49,111 @@ A modern, collaborative task management application built with React, TypeScript
 
 - **Frontend**: React 18, TypeScript, Tailwind CSS
 - **Backend**: Supabase (PostgreSQL, Auth, Storage)
-- **Email**: Gmail API integration with fallback services
+- **Email Services**: Resend, SMTP, EmailJS
 - **UI Components**: Radix UI, Framer Motion
 - **State Management**: React Query, Custom Hooks
 - **Build Tool**: Vite
 
-## Email Integration
+## Email Configuration
 
-### Gmail API Setup
-The application supports sending task sharing emails via Gmail API:
+### Option 1: Resend (Recommended)
+The most reliable email service with excellent deliverability:
 
-1. **Gmail API Credentials** (Environment Variables):
+1. **Sign up at [Resend](https://resend.com)**
+2. **Get your API key**
+3. **Set environment variable**:
+   ```env
+   RESEND_API_KEY=your_resend_api_key
    ```
-   GMAIL_API_KEY=your_gmail_api_key
-   GMAIL_CLIENT_ID=your_gmail_client_id
-   GMAIL_CLIENT_SECRET=your_gmail_client_secret
-   GMAIL_REFRESH_TOKEN=your_gmail_refresh_token
+
+### Option 2: SMTP (Gmail/Outlook)
+Use your existing email provider:
+
+1. **Enable 2-factor authentication**
+2. **Generate an app password**
+3. **Set environment variables**:
+   ```env
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USERNAME=your_email@gmail.com
+   SMTP_PASSWORD=your_app_password
    ```
 
-2. **Fallback Services**:
-   - Resend API (if Gmail not configured)
-   - Email simulation (for development)
+### Option 3: EmailJS
+Simple email service for basic needs:
 
-3. **Features**:
-   - Professional HTML email templates
-   - Task details with priority and status
-   - Personal messages from sender
-   - Responsive email design
-   - Error handling and retry logic
+1. **Sign up at [EmailJS](https://www.emailjs.com)**
+2. **Create a service and template**
+3. **Set environment variables**:
+   ```env
+   EMAILJS_SERVICE_ID=your_service_id
+   EMAILJS_TEMPLATE_ID=your_template_id
+   EMAILJS_USER_ID=your_user_id
+   ```
 
-## Profile Management
+### Email Features
+- **Professional HTML Templates**: Beautiful, responsive email designs
+- **Task Details**: Complete task information with priority and status
+- **Personal Messages**: Custom messages from the sender
+- **Responsive Design**: Emails look great on all devices
+- **Multiple Fallbacks**: Automatic fallback between email services
 
-### Enhanced Profile Features
-- **Basic Information**: Full name, bio, job title, company
-- **Contact Details**: Phone number, location, website
-- **Avatar Management**: Upload and preview profile pictures
-- **Professional Display**: Job title and company integration
-- **Real-time Updates**: Instant profile synchronization
+## Getting Started
 
-### Profile Fields
-```typescript
-interface Profile {
-  full_name: string
-  bio: string
-  phone: string
-  location: string
-  job_title: string
-  company: string
-  website: string
-  avatar_url: string
-}
+1. **Clone the repository**
+2. **Install dependencies**: `npm install`
+3. **Set up Supabase project**
+4. **Configure email service** (see Email Configuration above)
+5. **Set environment variables** (copy `.env.example` to `.env`)
+6. **Run development server**: `npm run dev`
+
+## Environment Variables
+
+```env
+# Supabase Configuration
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Email Service (Choose one)
+RESEND_API_KEY=your_resend_api_key
+
+# OR SMTP
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+
+# OR EmailJS
+EMAILJS_SERVICE_ID=your_service_id
+EMAILJS_TEMPLATE_ID=your_template_id
+EMAILJS_USER_ID=your_user_id
 ```
+
+## Email Setup Instructions
+
+### For Resend (Recommended):
+1. Go to [resend.com](https://resend.com)
+2. Sign up for a free account
+3. Get your API key from the dashboard
+4. Add `RESEND_API_KEY=your_key` to your `.env` file
+
+### For Gmail SMTP:
+1. Enable 2-factor authentication on your Gmail account
+2. Generate an app password: Google Account → Security → App passwords
+3. Use the app password (not your regular password) in the SMTP_PASSWORD field
+
+### For EmailJS:
+1. Go to [emailjs.com](https://www.emailjs.com)
+2. Create a service (Gmail, Outlook, etc.)
+3. Create an email template
+4. Get your Service ID, Template ID, and User ID
 
 ## Database Schema
 
 ### Tables
-- **profiles**: Enhanced user profile information
+- **profiles**: Enhanced user profile information with professional fields
 - **tasks**: Task management with full CRUD operations
-- **shared_tasks**: Task sharing and collaboration
+- **shared_tasks**: Task sharing and collaboration tracking
 
 ### Security
 - Row Level Security (RLS) enabled
@@ -107,37 +161,13 @@ interface Profile {
 - Secure file uploads
 - Authentication-based permissions
 
-## Getting Started
-
-1. **Clone the repository**
-2. **Install dependencies**: `npm install`
-3. **Set up Supabase project**
-4. **Configure environment variables**
-5. **Run development server**: `npm run dev`
-
-## Environment Variables
-
-```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# Gmail API (Optional)
-GMAIL_API_KEY=your_gmail_api_key
-GMAIL_CLIENT_ID=your_gmail_client_id
-GMAIL_CLIENT_SECRET=your_gmail_client_secret
-GMAIL_REFRESH_TOKEN=your_gmail_refresh_token
-
-# Fallback Email Service (Optional)
-RESEND_API_KEY=your_resend_api_key
-```
-
 ## Key Features Implemented
 
-### ✅ Gmail Email Integration
-- Professional email templates
-- Gmail API integration
-- Fallback email services
-- Error handling and logging
+### ✅ Professional Email Integration
+- Multiple email service support (Resend, SMTP, EmailJS)
+- Beautiful HTML email templates
+- Automatic fallback between services
+- Detailed email logging and error handling
 
 ### ✅ Enhanced Profile Management
 - Complete profile editing modal
@@ -145,26 +175,45 @@ RESEND_API_KEY=your_resend_api_key
 - Professional information fields
 - Real-time profile updates
 
-### ✅ Task Management
+### ✅ Advanced Task Management
 - Full CRUD operations
 - Advanced filtering and sorting
-- Calendar integration
-- Real-time updates
+- Calendar integration with persistent data
+- Real-time updates and synchronization
 
-### ✅ Collaboration
-- Task sharing via email
-- Personal messages
+### ✅ Task Collaboration
+- Email-based task sharing
+- Personal messages with shared tasks
 - Professional email templates
-- Database persistence
+- Database persistence for shared tasks
+
+## Troubleshooting Email Issues
+
+### If emails aren't sending:
+
+1. **Check your environment variables** - Make sure they're properly set
+2. **Verify email service credentials** - Test with a simple email first
+3. **Check the browser console** - Look for detailed error messages
+4. **Try different email services** - The app will automatically fallback
+5. **Check spam folders** - Emails might be filtered
+
+### Email Service Status:
+- The app will show which email service was used in the success message
+- If all services fail, it will simulate the email and log details to console
+- Check the browser console for detailed email information
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly
+4. Test email functionality thoroughly
 5. Submit a pull request
 
 ## License
 
 MIT License - see LICENSE file for details
+
+---
+
+**Note**: This application includes comprehensive email functionality with multiple service options and automatic fallbacks to ensure reliable email delivery for task sharing.
