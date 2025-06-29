@@ -81,7 +81,7 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
 
       if (error) throw error;
 
-      // Send email notifications (simulated)
+      // Send email notifications using Supabase Edge Function
       await sendEmailNotifications(shareEmails, task, user, message);
 
       toast({
@@ -107,34 +107,41 @@ export const ShareTaskModal = ({ isOpen, onClose, task }: ShareTaskModalProps) =
   };
 
   const sendEmailNotifications = async (emails: string[], task: Task, user: any, message: string) => {
-    // In a real application, you would integrate with an email service like SendGrid, Mailgun, etc.
-    // For now, we'll simulate the email sending process
-    
-    const emailData = {
-      to: emails,
-      subject: `Task Shared: ${task.title}`,
-      html: `
-        <h2>You've been shared a task!</h2>
-        <p><strong>From:</strong> ${user.email}</p>
-        <p><strong>Task:</strong> ${task.title}</p>
-        <p><strong>Description:</strong> ${task.description}</p>
-        <p><strong>Priority:</strong> ${task.priority}</p>
-        <p><strong>Status:</strong> ${task.status}</p>
-        ${task.dueDate ? `<p><strong>Due Date:</strong> ${task.dueDate}</p>` : ''}
-        ${message ? `<p><strong>Message:</strong> ${message}</p>` : ''}
-        <p>This task has been shared with you through TaskSpace.</p>
-      `
-    };
+    try {
+      // Call Supabase Edge Function to send emails
+      const { data, error } = await supabase.functions.invoke('send-task-email', {
+        body: {
+          to: emails,
+          task: {
+            title: task.title,
+            description: task.description,
+            priority: task.priority,
+            status: task.status,
+            dueDate: task.dueDate
+          },
+          sharedBy: {
+            email: user.email,
+            name: user.user_metadata?.full_name || user.email
+          },
+          message: message
+        }
+      });
 
-    // Simulate API call to email service
-    console.log('Sending email notifications:', emailData);
-    
-    // In production, you would make an actual API call here:
-    // await fetch('/api/send-email', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(emailData)
-    // });
+      if (error) {
+        console.error('Error sending email:', error);
+        // Don't throw error here as the task sharing was successful
+        toast({
+          title: "Task Shared",
+          description: "Task shared successfully, but email notifications may have failed to send.",
+          variant: "default"
+        });
+      } else {
+        console.log('Email sent successfully:', data);
+      }
+    } catch (error) {
+      console.error('Error calling email function:', error);
+      // Don't throw error here as the task sharing was successful
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

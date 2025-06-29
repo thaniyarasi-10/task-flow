@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar as CalendarIcon, Clock, Flag } from "lucide-react";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 
 interface Task {
   id: string;
@@ -30,14 +29,34 @@ export const CalendarModal = ({ isOpen, onClose, tasks, onDateSelect }: Calendar
 
   const getTasksForDate = (date: Date) => {
     if (!date) return [];
-    const dateString = format(date, 'yyyy-MM-dd');
+    
     return tasks.filter(task => {
       if (!task.dueDate) return false;
-      const taskDateString = format(new Date(task.dueDate), 'yyyy-MM-dd');
-      return taskDateString === dateString;
+      try {
+        const taskDate = new Date(task.dueDate);
+        return isSameDay(taskDate, date);
+      } catch (error) {
+        console.error('Error parsing task date:', task.dueDate, error);
+        return false;
+      }
     });
   };
 
+  const getTasksWithDueDates = () => {
+    return tasks.filter(task => task.dueDate).map(task => {
+      try {
+        return {
+          ...task,
+          parsedDate: new Date(task.dueDate!)
+        };
+      } catch (error) {
+        console.error('Error parsing task date:', task.dueDate, error);
+        return null;
+      }
+    }).filter(Boolean);
+  };
+
+  const tasksWithDates = getTasksWithDueDates();
   const selectedDateTasks = selectedDate ? getTasksForDate(selectedDate) : [];
 
   const getPriorityColor = (priority: string) => {
@@ -65,6 +84,24 @@ export const CalendarModal = ({ isOpen, onClose, tasks, onDateSelect }: Calendar
     }
   };
 
+  // Create modifiers for dates with tasks
+  const modifiers = {
+    hasTasks: (date: Date) => {
+      return tasksWithDates.some(task => 
+        task && isSameDay(task.parsedDate, date)
+      );
+    }
+  };
+
+  const modifiersStyles = {
+    hasTasks: {
+      backgroundColor: '#3b82f6',
+      color: 'white',
+      fontWeight: 'bold',
+      borderRadius: '50%'
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -84,27 +121,22 @@ export const CalendarModal = ({ isOpen, onClose, tasks, onDateSelect }: Calendar
                 selected={selectedDate}
                 onSelect={handleDateSelect}
                 className="rounded-md border-0"
-                modifiers={{
-                  hasTasks: (date) => {
-                    const tasksForDate = getTasksForDate(date);
-                    return tasksForDate.length > 0;
-                  }
-                }}
-                modifiersStyles={{
-                  hasTasks: {
-                    backgroundColor: '#3b82f6',
-                    color: 'white',
-                    fontWeight: 'bold'
-                  }
-                }}
+                modifiers={modifiers}
+                modifiersStyles={modifiersStyles}
               />
             </div>
             
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              <p className="font-medium mb-1">Legend:</p>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-blue-600 rounded"></div>
-                <span>Days with tasks</span>
+              <p className="font-medium mb-2">Legend:</p>
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-blue-600 rounded-full"></div>
+                  <span>Days with tasks ({tasksWithDates.length} total)</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-blue-600 rounded-full"></div>
+                  <span>Selected date</span>
+                </div>
               </div>
             </div>
           </div>
@@ -123,6 +155,11 @@ export const CalendarModal = ({ isOpen, onClose, tasks, onDateSelect }: Calendar
                     <p className="text-gray-500 dark:text-gray-400">
                       No tasks scheduled for this date
                     </p>
+                    {selectedDate && (
+                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                        Selected: {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               ) : (
@@ -162,6 +199,31 @@ export const CalendarModal = ({ isOpen, onClose, tasks, onDateSelect }: Calendar
                 </div>
               )}
             </div>
+
+            {/* Summary of all tasks with due dates */}
+            {tasksWithDates.length > 0 && (
+              <div className="mt-6">
+                <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-3">
+                  All Upcoming Tasks ({tasksWithDates.length})
+                </h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {tasksWithDates
+                    .sort((a, b) => a!.parsedDate.getTime() - b!.parsedDate.getTime())
+                    .map((task) => (
+                      <div 
+                        key={task!.id} 
+                        className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                        onClick={() => handleDateSelect(task!.parsedDate)}
+                      >
+                        <span className="font-medium truncate">{task!.title}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                          {format(task!.parsedDate, 'MMM d')}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
