@@ -33,6 +33,54 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_tasks: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          original_task_id: string
+          shared_by_user_id: string
+          shared_with_email: string
+          task_data: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          original_task_id: string
+          shared_by_user_id: string
+          shared_with_email: string
+          task_data: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          original_task_id?: string
+          shared_by_user_id?: string
+          shared_with_email?: string
+          task_data?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_tasks_original_task_id_fkey"
+            columns: ["original_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_tasks_shared_by_user_id_fkey"
+            columns: ["shared_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       tasks: {
         Row: {
           created_at: string
